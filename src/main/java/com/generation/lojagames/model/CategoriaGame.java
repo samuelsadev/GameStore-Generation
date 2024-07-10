@@ -47,5 +47,4 @@ public class CategoriaGame {
     public void setProdutosGame(List<ProdutoGame> produtosGame) {
         this.produtosGame = produtosGame;
     }
-
 }
