@@ -30,23 +30,27 @@ public class ProdutoController {
     }
 
     @GetMapping("/{id}")
-    public Optional<ProdutoGame> getProdutoGameById(@PathVariable Long id) {
-        return produtoGameRepository.findById(id);
+    public ResponseEntity<ProdutoGame> getById (@PathVariable Long id) {
+        return produtoGameRepository.findById(id)
+                //.map(reposta -> ResponseEntity.ok(reposta))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    @GetMapping("/titulo/{titulo}")
+    public ResponseEntity<List<ProdutoGame>> getByTitulo(@PathVariable String titulo) {
+        return ResponseEntity.ok(produtoGameRepository
+                .findAllByNomeContainingIgnoreCase(titulo));
     }
 
     @PostMapping
-    public ProdutoGame createProdutoGame(@RequestBody ProdutoGame produtoGame) {
-        return produtoGameRepository.save(produtoGame);
+    public ResponseEntity<ProdutoGame> post(@Valid @RequestBody ProdutoGame produtoGame) {
+        if (categoriaGameRepository.existsById(produtoGame.getCategoriaGame().getId()))
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(produtoGameRepository.save(produtoGame));
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Categoria não existe!", null);
     }
 
-//    @PutMapping("/{id}")
-//    public ProdutoGame updateProdutoGame(@PathVariable Long id, @RequestBody ProdutoGame produtoGameDetails) {
-//        ProdutoGame produtoGame = produtoGameRepository.findById(id).orElseThrow();
-//        produtoGame.setNome(produtoGameDetails.getNome());
-//        produtoGame.setPreco(produtoGameDetails.getPreco());
-//        produtoGame.setCategoriaGame(produtoGameDetails.getCategoriaGame());
-//        return produtoGameRepository.save(produtoGame);
-//    }
 
     @PutMapping
     public ResponseEntity<ProdutoGame> put(@Valid @RequestBody ProdutoGame produtoGame) {
@@ -56,13 +60,19 @@ public class ProdutoController {
                 return ResponseEntity.status(HttpStatus.OK)
                         .body(produtoGameRepository.save(produtoGame));
 
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tema não existe!", null);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Categoria não existe!", null);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{id}")
-    public void deleteProdutoGame(@PathVariable Long id) {
-        produtoGameRepository.deleteById(id);
+    public void delete(@PathVariable Long id) {
+        Optional<ProdutoGame> produtoGame = produtoGameRepository.findById(id);
+
+        if (produtoGame.isEmpty())
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+
+       produtoGameRepository.deleteById(id);
     }
 }
